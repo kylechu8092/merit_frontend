@@ -1,0 +1,234 @@
+'use client';
+import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { isAuthenticated } from '@/lib/auth';
+import AppNav from '@/components/layout/AppNav';
+import PageWrapper from '@/components/layout/PageWrapper';
+import DetectionModal from '@/components/ui/DetectionModal';
+import type { Detection } from '@/components/ui/DetectionModal';
+import { MOCK_DETECTIONS } from '@/lib/detections';
+
+type SortKey = 'time' | 'confidence' | 'id';
+type SortDir = 'asc' | 'desc';
+type FilterPriority = 'all' | 'high_conf' | 'pending_review' | 'low_conf';
+
+const PRIORITY_FILTERS: { value: FilterPriority; label: string }[] = [
+  { value: 'all', label: 'all' },
+  { value: 'high_conf', label: 'high_conf' },
+  { value: 'pending_review', label: 'pending_review' },
+  { value: 'low_conf', label: 'low_conf' },
+];
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'time', label: 'time' },
+  { value: 'confidence', label: 'confidence' },
+  { value: 'id', label: 'det_id' },
+];
+
+function ConfBar({ value }: { value: number }) {
+  const color = value >= 70 ? '#00D084' : value >= 50 ? '#FFB800' : '#FF4444';
+  return (
+    <div className="flex items-center gap-2 w-full">
+      <div className="flex-1 h-1 bg-[#E8E8E8]">
+        <div className="h-full transition-all" style={{ width: `${value}%`, backgroundColor: color }} />
+      </div>
+      <span className="text-[11px] font-semibold w-8 text-right" style={{ fontFamily: "'JetBrains Mono', monospace", color }}>
+        {value}%
+      </span>
+    </div>
+  );
+}
+
+export default function DetectionsPage() {
+  const router = useRouter();
+  const [ready, setReady] = useState(false);
+  const [detections, setDetections] = useState<Detection[]>(MOCK_DETECTIONS);
+  const [sortKey, setSortKey] = useState<SortKey>('time');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [filterPriority, setFilterPriority] = useState<FilterPriority>('all');
+  const [activeDetection, setActiveDetection] = useState<Detection | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated()) { router.replace('/login'); return; }
+    setReady(true);
+    // TODO: replace with real WebSocket connection
+    // const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8000/ws/detections');
+    // ws.onmessage = (e) => setDetections(prev => [JSON.parse(e.data), ...prev]);
+    // return () => ws.close();
+  }, [router]);
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  }
+
+  const sorted = useMemo(() => {
+    const filtered = filterPriority === 'all'
+      ? detections
+      : detections.filter((d) => d.priority === filterPriority);
+
+    return [...filtered].sort((a, b) => {
+      let delta = 0;
+      if (sortKey === 'confidence') delta = a.confidence - b.confidence;
+      else if (sortKey === 'id') delta = a.id - b.id;
+      else delta = a.time.localeCompare(b.time);
+      return sortDir === 'asc' ? delta : -delta;
+    });
+  }, [detections, sortKey, sortDir, filterPriority]);
+
+  if (!ready) return null;
+
+  return (
+    <div className="flex h-screen bg-white">
+      <AppNav />
+
+      <PageWrapper>
+        <div className="flex flex-col flex-1 p-10 gap-7 overflow-hidden min-h-0">
+        {/* Title row */}
+        <div className="flex items-center w-full shrink-0">
+          <div className="flex flex-col gap-1 flex-1">
+            <h1 className="text-[36px] font-bold text-black leading-tight">detections</h1>
+            <p className="text-[#888888] text-sm">// all person detections — live feed via websocket</p>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 border border-[#E8E8E8]">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#888888]" />
+            <span className="text-[#888888] text-xs font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              ws: standby
+            </span>
+          </div>
+        </div>
+
+        {/* Controls row */}
+        <div className="flex items-center gap-4 shrink-0">
+          {/* Priority filter */}
+          <div className="flex items-center gap-1">
+            <span className="text-[#888888] text-xs mr-2" style={{ fontFamily: "'JetBrains Mono', monospace" }}>filter:</span>
+            {PRIORITY_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setFilterPriority(f.value)}
+                className={`px-3 py-1.5 text-[10px] font-semibold border transition-colors ${
+                  filterPriority === f.value
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-[#777777] border-[#E0E0E0] hover:border-black hover:text-black'
+                }`}
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Sort controls */}
+          <div className="flex items-center gap-1">
+            <span className="text-[#888888] text-xs mr-2" style={{ fontFamily: "'JetBrains Mono', monospace" }}>sort:</span>
+            {SORT_OPTIONS.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => toggleSort(s.value)}
+                className={`flex items-center gap-1 px-3 py-1.5 text-[10px] font-semibold border transition-colors ${
+                  sortKey === s.value
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-[#777777] border-[#E0E0E0] hover:border-black hover:text-black'
+                }`}
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              >
+                {s.label}
+                {sortKey === s.value && (
+                  <span className="text-[9px]">{sortDir === 'desc' ? '↓' : '↑'}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          <span className="text-[#888888] text-xs" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            {sorted.length} result{sorted.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+
+        {/* Table header */}
+        <div className="flex items-center px-4 py-2 bg-[#F5F5F5] border border-[#E8E8E8] shrink-0">
+          <span className="w-16 text-[10px] text-[#888888] font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>det_id</span>
+          <span className="w-32 text-[10px] text-[#888888] font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>timestamp</span>
+          <span className="flex-1 text-[10px] text-[#888888] font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>confidence</span>
+          <span className="w-40 text-[10px] text-[#888888] font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>coordinates</span>
+          <span className="w-36 text-[10px] text-[#888888] font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>priority</span>
+          <span className="w-20 text-[10px] text-[#888888] font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>image</span>
+        </div>
+
+        {/* Detection rows */}
+        <div className="flex flex-col overflow-y-auto flex-1 min-h-0 border border-[#E8E8E8] divide-y divide-[#F0F0F0]">
+          {sorted.map((det) => (
+            <button
+              key={det.id}
+              onClick={() => setActiveDetection(det)}
+              className="flex items-center px-4 py-3 hover:bg-[#FAFAFA] transition-colors text-left w-full shrink-0"
+            >
+              <span
+                className="w-16 text-[11px] font-semibold text-[#000000]"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              >
+                #DET-00{det.id}
+              </span>
+              <span
+                className="w-32 text-[11px] text-[#555555]"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              >
+                {det.time}
+              </span>
+              <div className="flex-1 pr-6">
+                <ConfBar value={det.confidence} />
+              </div>
+              <span
+                className="w-40 text-[11px] text-[#555555]"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              >
+                {det.lat.toFixed(4)}, {det.lng.toFixed(4)}
+              </span>
+              <div className="w-36">
+                <span
+                  className="inline-block px-2 py-0.5 text-[10px] font-semibold"
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    color: det.priorityColor,
+                    backgroundColor: det.priorityColor + '22',
+                  }}
+                >
+                  {det.priority}
+                </span>
+              </div>
+              <div className="w-20">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={det.image}
+                  alt={`Detection ${det.id}`}
+                  className="w-14 h-9 object-cover"
+                />
+              </div>
+            </button>
+          ))}
+
+          {sorted.length === 0 && (
+            <div className="flex flex-col items-center justify-center flex-1 gap-2 py-20">
+              <span className="text-[#CCCCCC] text-2xl font-bold">$</span>
+              <span className="text-[#888888] text-sm" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                // no detections match filter
+              </span>
+            </div>
+          )}
+        </div>
+        </div>
+      </PageWrapper>
+
+      {activeDetection && (
+        <DetectionModal detection={activeDetection} onClose={() => setActiveDetection(null)} />
+      )}
+    </div>
+  );
+}
