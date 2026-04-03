@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { Detection } from '@/components/ui/DetectionModal';
@@ -29,9 +29,40 @@ interface SARMapProps {
 }
 
 export default function SARMap({ detections, onDetectionClick, flyTarget, detectionCount }: SARMapProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const containerRef  = useRef<HTMLDivElement>(null);
+  const mapRef        = useRef<mapboxgl.Map | null>(null);
+  const mapLoadedRef  = useRef(false);
+  const markersRef    = useRef<Map<number, mapboxgl.Marker>>(new Map());
+  const detectionsRef = useRef(detections);
+  detectionsRef.current = detections;
 
+  const addMarker = useCallback((det: Detection) => {
+    const map = mapRef.current;
+    if (!map || markersRef.current.has(det.id)) return;
+
+    const el = document.createElement('div');
+    el.style.cssText = [
+      `background:${det.confColor}`,
+      'padding:3px 8px',
+      "font-family:'JetBrains Mono',monospace",
+      'font-size:10px',
+      'font-weight:600',
+      'color:#000',
+      'cursor:pointer',
+      'border-radius:2px',
+      'box-shadow:0 0 0 1.5px rgba(0,0,0,0.4)',
+    ].join(';');
+    el.textContent = `[${det.confidence}%]`;
+    el.addEventListener('click', () => onDetectionClick(det));
+
+    const marker = new mapboxgl.Marker({ element: el })
+      .setLngLat([det.lng, det.lat])
+      .addTo(map);
+
+    markersRef.current.set(det.id, marker);
+  }, [onDetectionClick]);
+
+  // ── Map initialisation (runs once) ──────────────────────────────────────────
   useEffect(() => {
     if (!MAPBOX_TOKEN || mapRef.current || !containerRef.current) return;
 
@@ -48,7 +79,7 @@ export default function SARMap({ detections, onDetectionClick, flyTarget, detect
     mapRef.current = map;
 
     const ro = new ResizeObserver(() => map.resize());
-    ro.observe(containerRef.current);
+    ro.observe(containerRef.current!);
 
     map.on('load', () => {
       map.resize();
@@ -62,7 +93,7 @@ export default function SARMap({ detections, onDetectionClick, flyTarget, detect
           geometry: { type: 'Polygon', coordinates: [SEARCH_AREA_COORDS] },
         },
       });
-      map.addLayer({ id: 'sa-fill', type: 'fill', source: 'search-area', paint: { 'fill-color': '#00D084', 'fill-opacity': 0.07 } });
+      map.addLayer({ id: 'sa-fill',   type: 'fill', source: 'search-area', paint: { 'fill-color': '#00D084', 'fill-opacity': 0.07 } });
       map.addLayer({ id: 'sa-border', type: 'line', source: 'search-area', paint: { 'line-color': '#00D084', 'line-width': 1.5, 'line-dasharray': [4, 2] } });
 
       // Grid lines
@@ -71,22 +102,12 @@ export default function SARMap({ detections, onDetectionClick, flyTarget, detect
         data: {
           type: 'FeatureCollection',
           features: GRID_LINES.map((coords) => ({
-            type: 'Feature',
-            properties: {},
+            type: 'Feature', properties: {},
             geometry: { type: 'LineString', coordinates: coords },
           })),
         },
       });
       map.addLayer({ id: 'grid-lines', type: 'line', source: 'grid', paint: { 'line-color': '#00D084', 'line-width': 0.5, 'line-opacity': 0.3 } });
-
-      // Detection markers — clickable pings
-      detections.forEach((det) => {
-        const el = document.createElement('div');
-        el.style.cssText = `background:${det.confColor};padding:3px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:#000;cursor:pointer;`;
-        el.textContent = `[${det.confidence}%]`;
-        el.addEventListener('click', () => onDetectionClick(det));
-        new mapboxgl.Marker({ element: el }).setLngLat([det.lng, det.lat]).addTo(map);
-      });
 
       // Drone marker
       const droneEl = document.createElement('div');
@@ -97,16 +118,26 @@ export default function SARMap({ detections, onDetectionClick, flyTarget, detect
         <span style="position:relative;color:#00D084;font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1;">&gt;</span>
       `;
       new mapboxgl.Marker({ element: droneEl }).setLngLat([-122.424, 37.782]).addTo(map);
+
+      // Mark map as loaded and add any detections that arrived before load
+      mapLoadedRef.current = true;
+      detectionsRef.current.forEach((det) => addMarker(det));
     });
 
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
-    return () => { ro.disconnect(); map.remove(); mapRef.current = null; };
+    return () => { ro.disconnect(); map.remove(); mapRef.current = null; mapLoadedRef.current = false; markersRef.current.clear(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fly to a detection when triggered from the modal
+  // ── Add new detection markers as they stream in ──────────────────────────────
+  useEffect(() => {
+    if (!mapLoadedRef.current) return;
+    detections.forEach((det) => addMarker(det));
+  }, [detections, addMarker]);
+
+  // ── Fly to a detection from the modal ───────────────────────────────────────
   useEffect(() => {
     if (!flyTarget || !mapRef.current) return;
     mapRef.current.flyTo({ center: [flyTarget.lng, flyTarget.lat], zoom: 15, speed: 1.4 });
@@ -142,7 +173,9 @@ export default function SARMap({ detections, onDetectionClick, flyTarget, detect
       {/* Live detection count */}
       {detectionCount !== undefined && (
         <div className="absolute top-3 right-12 flex items-center gap-3 px-3 py-2 bg-[#000000CC] z-10 pointer-events-none">
-          <span className="text-[#00D084] text-[10px] font-semibold">{detectionCount} detection{detectionCount !== 1 ? 's' : ''}</span>
+          <span className="text-[#00D084] text-[10px] font-semibold">
+            {detectionCount} detection{detectionCount !== 1 ? 's' : ''}
+          </span>
         </div>
       )}
     </div>

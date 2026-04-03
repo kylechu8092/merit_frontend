@@ -128,20 +128,18 @@ export default function DashboardPage() {
             </div>
             <div className="flex-1 flex flex-col gap-3 bg-white p-6 border border-[#E8E8E8]">
               <span className="text-[#888888] text-xs">area_searched</span>
-              <span className="text-black text-[36px] font-bold leading-none">4.2 km²</span>
-              <span className="text-[#888888] text-xs">// 68% of target_zone covered</span>
+              <span className="text-[#CCCCCC] text-[36px] font-bold leading-none">--</span>
+              <span className="text-[#CCCCCC] text-xs">// no_active_mission</span>
             </div>
             <div className="flex-1 flex flex-col gap-3 bg-white p-6 border border-[#E8E8E8]">
               <span className="text-[#888888] text-xs">battery_level</span>
-              <span className="text-black text-[36px] font-bold leading-none">78%</span>
-              <div className="h-1 bg-[#E8E8E8] w-full">
-                <div className="h-full bg-[#00D084]" style={{ width: '78%' }} />
-              </div>
+              <span className="text-[#CCCCCC] text-[36px] font-bold leading-none">--</span>
+              <div className="h-1 bg-[#E8E8E8] w-full" />
             </div>
             <div className="flex-1 flex flex-col gap-3 bg-white p-6 border border-[#E8E8E8]">
               <span className="text-[#888888] text-xs">mission_time</span>
-              <span className="text-black text-[36px] font-bold leading-none">01:47:23</span>
-              <span className="text-[#888888] text-xs">est_remaining: 00:43:00</span>
+              <span className="text-[#CCCCCC] text-[36px] font-bold leading-none">--:--:--</span>
+              <span className="text-[#CCCCCC] text-xs">// no_active_mission</span>
             </div>
           </div>
 

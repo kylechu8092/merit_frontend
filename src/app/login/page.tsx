@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { setToken, isAuthenticated } from '@/lib/auth';
 
 type Mode = 'signin' | 'signup';
@@ -125,7 +126,7 @@ export default function LoginPage() {
         className="flex flex-col justify-center gap-8 bg-black p-20"
         style={{ width: '790px', minWidth: '790px' }}
       >
-        <div className="flex items-end gap-4">
+        <Link href="/" className="flex items-end gap-4 hover:opacity-80 transition-opacity">
           <span
             className="text-[#00D084] font-bold leading-none"
             style={{ fontSize: '120px', lineHeight: 1 }}
@@ -136,7 +137,7 @@ export default function LoginPage() {
             <span className="text-white font-bold text-[42px] leading-tight">SKYLINE_SAR</span>
             <span className="text-[#888888] text-sm">// search_and_rescue intelligence platform</span>
           </div>
-        </div>
+        </Link>
 
         <div
           className="flex flex-col gap-3"
@@ -160,8 +161,12 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right panel ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-col justify-center gap-8 bg-white flex-1 p-20 overflow-hidden">
-        <div style={panelStyle}>
+      <div className="flex flex-col bg-white flex-1 p-20 overflow-hidden">
+        <Link href="/" className="flex items-center gap-1.5 text-[#AAAAAA] text-xs hover:text-[#00D084] transition-colors mb-auto self-start">
+          <span>&lt;</span>
+          <span>back_to_home</span>
+        </Link>
+        <div className="flex flex-col justify-center flex-1" style={panelStyle}>
 
           {mode === 'signin' ? (
             /* ── Sign In ── */
@@ -264,11 +269,11 @@ export default function LoginPage() {
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[#777777] text-xs font-medium">
-                    mapbox_api_token <span className="text-[#FF4444]">*</span>
+                    drone_token <span className="text-[#FF4444]">*</span>
                   </label>
                   <input
                     type="text" value={mapboxToken} onChange={e => setMapboxToken(e.target.value)}
-                    placeholder="// your Mapbox public token (required)"
+                    placeholder="// issued drone token (required)"
                     className="h-12 px-4 bg-[#F5F5F5] border border-[#E0E0E0] text-sm text-black placeholder-[#CCCCCC] outline-none focus:border-[#00D084] transition-colors w-full"
                     style={{ fontFamily: 'inherit' }}
                   />
@@ -300,6 +305,7 @@ export default function LoginPage() {
               <span className="text-[#888888] text-xs mt-8 block">// authorized_personnel_only</span>
             </>
           )}
+        </div>
         </div>
       </div>
     </div>
