@@ -70,7 +70,7 @@ export default function LandingPage() {
             login
           </Link>
           <Link
-            href="/signup"
+            href="/login?mode=signup"
             className="flex items-center gap-1.5 px-4 py-1.5 border border-[#00D084] text-[#00D084] text-xs font-semibold hover:bg-[#00D084] hover:text-black transition-colors"
           >
             <span>&gt;</span>
@@ -142,7 +142,7 @@ export default function LandingPage() {
               launch_dashboard
             </button>
             <Link
-              href="/signup"
+              href="/login?mode=signup"
               className="flex items-center h-12 px-8 border border-[#333333] text-[#888888] text-sm hover:border-[#555555] hover:text-white transition-colors"
             >
               request_access

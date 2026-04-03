@@ -12,7 +12,11 @@ export const metadata: Metadata = {
   title: "SKYLINE_SAR",
   description: "// search_and_rescue intelligence platform",
   icons: {
-    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml', sizes: 'any' },
+    ],
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
   },
 };
 
