@@ -82,7 +82,6 @@ export default function LoginPage() {
     setError('// error: invalid_token');
   }
 
-  // ── Success overlay ──────────────────────────────────────────────────────────
   if (success) {
     return (
       <div className="flex h-screen bg-black items-center justify-center">
@@ -92,28 +91,28 @@ export default function LoginPage() {
           <span className="text-[#00AF6F] text-sm font-medium">[OK] loading operator_dashboard...</span>
           <span className="text-[#444444] text-xs mt-2">$ redirecting to secure session...</span>
         </div>
-        <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+        <style>{`@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }`}</style>
       </div>
     );
   }
 
   const leftLines = mode === 'signin'
     ? [
-        { text: '$ system.auth --verify',            dim: true },
-        { text: '[OK] drone_fleet: online',           ok: true  },
-        { text: '[OK] satellite_uplink: connected',   ok: true  },
-        { text: '[OK] thermal_sensors: calibrated',   ok: true  },
-        { text: '$ awaiting_credentials...',          dim: true },
+        { text: '$ system.auth --verify',          ok: false },
+        { text: '[OK] drone_fleet: online',         ok: true  },
+        { text: '[OK] satellite_uplink: connected', ok: true  },
+        { text: '[OK] thermal_sensors: calibrated', ok: true  },
+        { text: '$ awaiting_credentials...',        ok: false },
       ]
     : [
-        { text: '$ system.register --new_operator',   dim: true },
-        { text: '[OK] clearance_check: valid',        ok: true  },
-        { text: '[OK] token_validation: pending',     ok: true  },
-        { text: '[OK] provisioning_account...',       ok: true  },
-        { text: '$ awaiting_registration...',         dim: true },
+        { text: '$ system.register --new_operator', ok: false },
+        { text: '[OK] clearance_check: valid',      ok: true  },
+        { text: '[OK] token_validation: pending',   ok: true  },
+        { text: '[OK] provisioning_account...',     ok: true  },
+        { text: '$ awaiting_registration...',       ok: false },
       ];
 
-  const panelStyle: React.CSSProperties = {
+  const fadeSlide: React.CSSProperties = {
     opacity: transitioning ? 0 : 1,
     transform: transitioning ? 'translateX(14px)' : 'translateX(0)',
     transition: 'opacity 0.22s ease, transform 0.22s ease',
@@ -121,36 +120,20 @@ export default function LoginPage() {
 
   return (
     <div className="flex h-screen">
-      {/* ── Left panel ──────────────────────────────────────────────────────── */}
-      <div
-        className="flex flex-col justify-center gap-8 bg-black p-20"
-        style={{ width: '790px', minWidth: '790px' }}
-      >
+
+      {/* ── Left panel ── */}
+      <div className="flex flex-col justify-center gap-8 bg-black p-20" style={{ width: '790px', minWidth: '790px' }}>
         <Link href="/" className="flex items-end gap-4 hover:opacity-80 transition-opacity">
-          <span
-            className="text-[#00D084] font-bold leading-none"
-            style={{ fontSize: '120px', lineHeight: 1 }}
-          >
-            &gt;
-          </span>
+          <span className="text-[#00D084] font-bold leading-none" style={{ fontSize: '120px', lineHeight: 1 }}>&gt;</span>
           <div className="flex flex-col gap-1 pb-4">
             <span className="text-white font-bold text-[42px] leading-tight">SKYLINE_SAR</span>
             <span className="text-[#888888] text-sm">// search_and_rescue intelligence platform</span>
           </div>
         </Link>
 
-        <div
-          className="flex flex-col gap-3"
-          style={{
-            opacity: transitioning ? 0 : 1,
-            transition: 'opacity 0.22s ease',
-          }}
-        >
+        <div className="flex flex-col gap-3" style={{ opacity: transitioning ? 0 : 1, transition: 'opacity 0.22s ease' }}>
           {leftLines.map((l, i) => (
-            <span
-              key={i}
-              className={`text-sm font-medium ${l.ok ? 'text-[#00AF6F]' : 'text-[#777777]'}`}
-            >
+            <span key={i} className={`text-sm font-medium ${l.ok ? 'text-[#00AF6F]' : 'text-[#777777]'}`}>
               {l.text}
             </span>
           ))}
@@ -160,57 +143,44 @@ export default function LoginPage() {
         <span className="text-[#777777] text-xs">v3.2.1 // classification: restricted</span>
       </div>
 
-      {/* ── Right panel ─────────────────────────────────────────────────────── */}
+      {/* ── Right panel ── */}
       <div className="flex flex-col bg-white flex-1 p-20 overflow-hidden">
-        <Link href="/" className="flex items-center gap-1.5 text-[#AAAAAA] text-xs hover:text-[#00D084] transition-colors mb-auto self-start">
+        <Link href="/" className="flex items-center gap-1.5 text-[#AAAAAA] text-xs hover:text-[#00D084] transition-colors self-start mb-10">
           <span>&lt;</span>
           <span>back_to_home</span>
         </Link>
-        <div className="flex flex-col justify-center flex-1" style={panelStyle}>
 
+        <div style={fadeSlide}>
           {mode === 'signin' ? (
-            /* ── Sign In ── */
             <>
               <div className="flex flex-col gap-2 mb-8">
                 <h1 className="text-[42px] font-bold text-black">sign_in</h1>
                 <p className="text-[#888888] text-sm">// enter your credentials to continue</p>
               </div>
-
               <form onSubmit={handleLogin} className="flex flex-col gap-5">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[#777777] text-xs font-medium">email_address</label>
-                  <input
-                    type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                     placeholder="operator@skyline-sar.gov"
                     className="h-12 px-4 bg-[#F5F5F5] border border-[#E0E0E0] text-sm text-black placeholder-[#CCCCCC] outline-none focus:border-[#00D084] transition-colors w-full"
-                    style={{ fontFamily: 'inherit' }}
-                  />
+                    style={{ fontFamily: 'inherit' }} />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[#777777] text-xs font-medium">password</label>
-                  <input
-                    type="password" value={password} onChange={e => setPassword(e.target.value)}
+                  <input type="password" value={password} onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••••••"
                     className="h-12 px-4 bg-[#F5F5F5] border border-[#E0E0E0] text-sm text-black placeholder-[#CCCCCC] outline-none focus:border-[#00D084] transition-colors w-full"
-                    style={{ fontFamily: 'inherit' }}
-                  />
+                    style={{ fontFamily: 'inherit' }} />
                 </div>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox" id="remember" checked={remember}
-                    onChange={e => setRemember(e.target.checked)}
-                    className="w-4 h-4 border border-[#E0E0E0] accent-[#00D084]"
-                  />
+                  <input type="checkbox" id="remember" checked={remember} onChange={e => setRemember(e.target.checked)}
+                    className="w-4 h-4 border border-[#E0E0E0] accent-[#00D084]" />
                   <label htmlFor="remember" className="text-[#777777] text-xs cursor-pointer">remember_me</label>
                 </div>
-
                 {error && <span className="text-[#FF4444] text-xs">{error}</span>}
-
                 <div className="flex flex-col gap-4 w-full">
-                  <button
-                    type="submit" disabled={loading}
-                    className="flex items-center justify-center h-12 w-full bg-[#00D084] text-black text-sm font-medium hover:bg-[#00b873] transition-colors disabled:opacity-60"
-                  >
+                  <button type="submit" disabled={loading}
+                    className="flex items-center justify-center h-12 w-full bg-[#00D084] text-black text-sm font-medium hover:bg-[#00b873] transition-colors disabled:opacity-60">
                     {loading ? '// authenticating...' : '$ authenticate'}
                   </button>
                   <div className="flex items-center gap-4 w-full">
@@ -218,74 +188,57 @@ export default function LoginPage() {
                     <span className="text-[#888888] text-xs">// or</span>
                     <div className="flex-1 h-px bg-[#E0E0E0]" />
                   </div>
-                  <button
-                    type="button" onClick={() => switchMode('signup')}
-                    className="flex items-center justify-center h-12 w-full bg-white border border-[#E0E0E0] text-black text-sm font-medium hover:bg-[#F5F5F5] transition-colors"
-                  >
+                  <button type="button" onClick={() => switchMode('signup')}
+                    className="flex items-center justify-center h-12 w-full bg-white border border-[#E0E0E0] text-black text-sm font-medium hover:bg-[#F5F5F5] transition-colors">
                     &gt; request_access
                   </button>
                 </div>
               </form>
-
               <span className="text-[#888888] text-xs mt-8 block">// authorized_personnel_only</span>
             </>
           ) : (
-            /* ── Sign Up ── */
             <>
               <div className="flex flex-col gap-2 mb-8">
                 <h1 className="text-[42px] font-bold text-black">sign_up</h1>
                 <p className="text-[#888888] text-sm">// create your operator account</p>
               </div>
-
               <form onSubmit={handleSignup} className="flex flex-col gap-5">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[#777777] text-xs font-medium">email_address</label>
-                  <input
-                    type="email" value={suEmail} onChange={e => setSuEmail(e.target.value)}
+                  <input type="email" value={suEmail} onChange={e => setSuEmail(e.target.value)}
                     placeholder="operator@skyline-sar.gov"
                     className="h-12 px-4 bg-[#F5F5F5] border border-[#E0E0E0] text-sm text-black placeholder-[#CCCCCC] outline-none focus:border-[#00D084] transition-colors w-full"
-                    style={{ fontFamily: 'inherit' }}
-                  />
+                    style={{ fontFamily: 'inherit' }} />
                 </div>
                 <div className="flex gap-4">
                   <div className="flex flex-col gap-1.5 flex-1">
                     <label className="text-[#777777] text-xs font-medium">password</label>
-                    <input
-                      type="password" value={suPassword} onChange={e => setSuPassword(e.target.value)}
+                    <input type="password" value={suPassword} onChange={e => setSuPassword(e.target.value)}
                       placeholder="min. 8 characters"
                       className="h-12 px-4 bg-[#F5F5F5] border border-[#E0E0E0] text-sm text-black placeholder-[#CCCCCC] outline-none focus:border-[#00D084] transition-colors w-full"
-                      style={{ fontFamily: 'inherit' }}
-                    />
+                      style={{ fontFamily: 'inherit' }} />
                   </div>
                   <div className="flex flex-col gap-1.5 flex-1">
                     <label className="text-[#777777] text-xs font-medium">confirm_password</label>
-                    <input
-                      type="password" value={suConfirm} onChange={e => setSuConfirm(e.target.value)}
+                    <input type="password" value={suConfirm} onChange={e => setSuConfirm(e.target.value)}
                       placeholder="repeat password"
                       className="h-12 px-4 bg-[#F5F5F5] border border-[#E0E0E0] text-sm text-black placeholder-[#CCCCCC] outline-none focus:border-[#00D084] transition-colors w-full"
-                      style={{ fontFamily: 'inherit' }}
-                    />
+                      style={{ fontFamily: 'inherit' }} />
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[#777777] text-xs font-medium">
                     drone_token <span className="text-[#FF4444]">*</span>
                   </label>
-                  <input
-                    type="text" value={mapboxToken} onChange={e => setMapboxToken(e.target.value)}
+                  <input type="text" value={mapboxToken} onChange={e => setMapboxToken(e.target.value)}
                     placeholder="// issued drone token (required)"
                     className="h-12 px-4 bg-[#F5F5F5] border border-[#E0E0E0] text-sm text-black placeholder-[#CCCCCC] outline-none focus:border-[#00D084] transition-colors w-full"
-                    style={{ fontFamily: 'inherit' }}
-                  />
+                    style={{ fontFamily: 'inherit' }} />
                 </div>
-
                 {error && <span className="text-[#FF4444] text-xs">{error}</span>}
-
                 <div className="flex flex-col gap-4 w-full">
-                  <button
-                    type="submit"
-                    className="flex items-center justify-center h-12 w-full bg-[#00D084] text-black text-sm font-medium hover:bg-[#00b873] transition-colors"
-                  >
+                  <button type="submit"
+                    className="flex items-center justify-center h-12 w-full bg-[#00D084] text-black text-sm font-medium hover:bg-[#00b873] transition-colors">
                     $ register
                   </button>
                   <div className="flex items-center gap-4 w-full">
@@ -293,21 +246,18 @@ export default function LoginPage() {
                     <span className="text-[#888888] text-xs">// or</span>
                     <div className="flex-1 h-px bg-[#E0E0E0]" />
                   </div>
-                  <button
-                    type="button" onClick={() => switchMode('signin')}
-                    className="flex items-center justify-center h-12 w-full bg-white border border-[#E0E0E0] text-black text-sm font-medium hover:bg-[#F5F5F5] transition-colors"
-                  >
+                  <button type="button" onClick={() => switchMode('signin')}
+                    className="flex items-center justify-center h-12 w-full bg-white border border-[#E0E0E0] text-black text-sm font-medium hover:bg-[#F5F5F5] transition-colors">
                     &gt; sign_in
                   </button>
                 </div>
               </form>
-
               <span className="text-[#888888] text-xs mt-8 block">// authorized_personnel_only</span>
             </>
           )}
         </div>
-        </div>
       </div>
+
     </div>
   );
 }
